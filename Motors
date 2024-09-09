@@ -1,0 +1,25 @@
+from machine import Pin, PWM
+import ustruct
+import usocket
+
+motor1 = PWM(Pin(0))
+motor2 = PWM(Pin(1))
+motor1.freq(50)
+motor2.freq(50)
+
+addr = usocket.getaddrinfo('0.0.0.0', 1234)[0][-1]
+sock = usocket.socket()
+sock.bind(addr)
+sock.listen(1)
+
+def set_motor_speed(speed1, speed2):
+    motor1.duty_u16(int(speed1 * 65535 / 100))
+    motor2.duty_u16(int(speed2 * 65535 / 100))
+
+while True:
+    cl, addr = sock.accept()
+    data = cl.recv(1024)
+    if data:
+        speed1, speed2 = ustruct.unpack('ff', data)
+        set_motor_speed(speed1, speed2)
+    cl.close()
